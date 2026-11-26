@@ -1,0 +1,8 @@
+<?php
+require_once __DIR__ . '/../config/bootstrap.php';require_login();$uid=current_user_id();$errors=[];
+if($_SERVER['REQUEST_METHOD']==='POST'){verify_csrf();$name=trim($_POST['nome']??'');if($name==='')$errors[]='Informe o nome da categoria.';else{$stmt=$pdo->prepare('INSERT INTO categorias(usuario_id,nome) VALUES(?,?)');try{$stmt->execute([$uid,$name]);flash('success','Categoria criada.');redirect('/organizae/categorias/index.php');}catch(PDOException $e){$errors[]='Já existe uma categoria com esse nome.';}}}
+$stmt=$pdo->prepare('SELECT c.id,c.nome,COUNT(t.id) AS total FROM categorias c LEFT JOIN tarefas t ON t.categoria_id=c.id AND t.usuario_id=c.usuario_id WHERE c.usuario_id=? GROUP BY c.id,c.nome ORDER BY c.nome');$stmt->execute([$uid]);$categories=$stmt->fetchAll();page_header('Categorias');?>
+<div class="page-heading"><div><p class="eyebrow">ORGANIZAÇÃO</p><h1>Minhas categorias</h1><p class="muted">Separe suas atividades por disciplina ou assunto.</p></div></div>
+<div class="two-col"><section class="panel"><h2>Nova categoria</h2><?php foreach($errors as $er):?><div class="alert error"><?=e($er)?></div><?php endforeach;?><form method="post"><?=csrf_field()?><label>Nome da categoria<input name="nome" maxlength="100" required placeholder="Ex.: Engenharia de Software"></label><button class="btn btn-primary">Adicionar categoria</button></form></section>
+<section class="panel"><h2>Categorias cadastradas</h2><?php if(!$categories):?><p class="muted">Nenhuma categoria cadastrada.</p><?php else:?><ul class="category-list"><?php foreach($categories as $c):?><li><span><?=e($c['nome'])?></span><span class="muted"><?= (int)$c['total']?> tarefa(s)</span></li><?php endforeach;?></ul><?php endif;?></section></div>
+<?php page_footer();?>
